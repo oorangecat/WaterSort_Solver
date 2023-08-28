@@ -1,18 +1,26 @@
 // Contains game mechanics
 package game
 
+import "strings"
+
 type VialState struct {
-	Content [4]byte
-	Head    int
+	Content [VialSize]byte
+	Head    int //0->4, also represents the empty units
+	TopLen  int //cache length of the top color to avoid multiple re-explorations
 }
 
 type GameState struct {
-	VialStates []*VialState
+	VialStates []VialState
 }
 
 type StateChange struct {
-	SourceVial []*VialState //[starting state, final state]
-	DestVial   []*VialState
+	SourceVial []VialState //[starting state, final state]
+	DestVial   []VialState
+}
+
+type Game struct {
+	InitialState   *GameState
+	NumberOfColors int
 }
 
 func ValidateStateChange(sc *StateChange) bool {
@@ -71,4 +79,18 @@ func CheckWin(gs *GameState) bool {
 	}
 
 	return true
+}
+
+func (vs VialState) VialHash() string {
+	return string(vs.Content[vs.Head:])
+}
+
+func (state GameState) StateHash() string {
+	var builder strings.Builder
+
+	for pos := 0; pos != len(state.VialStates); pos++ {
+		builder.WriteString(state.VialStates[pos].VialHash())
+	}
+
+	return builder.String()
 }
