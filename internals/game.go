@@ -29,29 +29,41 @@ func ValidateStateChange(sc *StateChange) bool {
 		return false
 	}
 
+	//Checking if heads are of the same color and there is free space
 	sourceColor := sc.SourceVial[0].Content[sc.SourceVial[0].Head]
-
 	if sc.DestVial[0].Head != VialSize {
 		destColor := sc.DestVial[0].Content[sc.DestVial[0].Head]
 
-		if sourceColor != destColor { //Heads must be of the same color, dest must have a free slot
+		if sourceColor != destColor {
 			return false
 		}
 	}
 
+	//Checking if all units of color were moves
 	var destIdx int = sc.DestVial[1].Head
 	var maxDestSpace int = sc.DestVial[0].Head
-
-	for i := 0; i < VialSize; i++ { //Will hardly ever fully loop
-
-		//Every possible drop of color must have been moved to the new vial
+	for i := 0; i < VialSize; i++ {
 		if sc.SourceVial[0].Content[sc.SourceVial[0].Head+i] != sourceColor || i > maxDestSpace {
 			break
 		}
+
 		if sc.DestVial[1].Content[destIdx] != sourceColor {
 			return false
 		}
 		destIdx++
+	}
+
+	// Validate Head and Toplen fields
+	var headDiff = (sc.SourceVial[1].Head - sc.SourceVial[0].Head) - (sc.DestVial[0].Head - sc.DestVial[1].Head)
+
+	if headDiff != 0 {
+		return false
+	}
+
+	var newTopLen = (sc.DestVial[0].TopLen + sc.SourceVial[0].TopLen)
+
+	if newTopLen != sc.DestVial[1].TopLen {
+		return false
 	}
 
 	return true
@@ -66,6 +78,7 @@ func CheckWin(gs *GameState) bool {
 				return false // A vial is still half empty
 			} else if emptyVials < MaxEmptyVials {
 				emptyVials++
+				continue
 			} else {
 				return false // More than 2 fully empty vials
 			}
@@ -82,7 +95,11 @@ func CheckWin(gs *GameState) bool {
 }
 
 func (vs VialState) VialHash() string {
-	return string(vs.Content[vs.Head:])
+	if vs.Head != VialSize {
+		return string(vs.Content[vs.Head:])
+	}
+	//Empty String
+	return strings.Repeat("E", VialSize)
 }
 
 func (state GameState) StateHash() string {
